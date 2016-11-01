@@ -2,18 +2,10 @@
 /// Monday October 31, 2016 @ 6:45PM
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ProxyParse
@@ -22,6 +14,7 @@ namespace ProxyParse
     {
         public Thread proxyThread;
         public delegate void SetProxyItem(ListViewItem l);
+        public CheckBox cbOpt;
 
         public frmMain()
         {
@@ -44,7 +37,9 @@ namespace ProxyParse
             Regex regx;
             List<string> sites = new List<string>() { };
             sites.Add("https://incloak.com/proxy-list/");
-            sites.Add("http://www.sslproxies.org/");
+            sites.Add("http://www.sslproxies.org/");//sslproxies variants
+            sites.Add("http://us-proxy.org/");
+            sites.Add("http://socks-proxy.net/");
 
             foreach (string url in sites)
             {
@@ -82,6 +77,7 @@ namespace ProxyParse
 
                                     status.Text = "Loading proxies from " + part;
                                 }
+
                                 break;
 
                             case "www.sslproxies.org":
@@ -94,6 +90,50 @@ namespace ProxyParse
                                 for (int i = 0; i < sslProxies.Count; i++)
                                 {
                                     Match m = sslProxies[i];
+                                    ListViewItem lvi = new ListViewItem();
+                                    lvi.Text = m.Groups[1].Captures[0].Value;
+                                    lvi.SubItems.Add(m.Groups[2].Captures[0].Value);
+                                    lvi.SubItems.Add(DateTime.Now.ToLongTimeString());
+                                    lvi.SubItems.Add(part);
+                                    setProxyItem(lvi);
+
+                                    status.Text = "Loading proxies from " + part;
+                                }
+
+                                break;
+
+                            case "us-proxy.org":
+                                status.Text = "Analyzing " + part;
+                                src = getSrc(url);
+
+                                regx = new Regex(@"<td>(\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3})<\/td><td>(\d{1,5})<\/td>");
+                                MatchCollection usProxies = regx.Matches(src);
+
+                                for (int i = 0; i < usProxies.Count; i++)
+                                {
+                                    Match m = usProxies[i];
+                                    ListViewItem lvi = new ListViewItem();
+                                    lvi.Text = m.Groups[1].Captures[0].Value;
+                                    lvi.SubItems.Add(m.Groups[2].Captures[0].Value);
+                                    lvi.SubItems.Add(DateTime.Now.ToLongTimeString());
+                                    lvi.SubItems.Add(part);
+                                    setProxyItem(lvi);
+
+                                    status.Text = "Loading proxies from " + part;
+                                }
+
+                                break;
+
+                            case "socks-proxy.net":
+                                status.Text = "Analyzing " + part;
+                                src = getSrc(url);
+
+                                regx = new Regex(@"<td>(\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3})<\/td><td>(\d{1,5})<\/td>");
+                                MatchCollection snProxies = regx.Matches(src);
+
+                                for (int i = 0; i < snProxies.Count; i++)
+                                {
+                                    Match m = snProxies[i];
                                     ListViewItem lvi = new ListViewItem();
                                     lvi.Text = m.Groups[1].Captures[0].Value;
                                     lvi.SubItems.Add(m.Groups[2].Captures[0].Value);
@@ -215,6 +255,40 @@ namespace ProxyParse
         }
 
         private void frmMain_Load(object sender, EventArgs e)
+        {
+            //load options
+            addCbOption("incloak.com");
+            addCbOption("sslproxies.org");
+            addCbOption("us-proxy.org");
+        }
+
+        public void addCbOption(string text)
+        {
+            checkedListBox1.Items.Add(text, true);
+        }
+
+        private void textFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //export to csv flat file
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.FileName = "proxies.txt";
+            sfd.Filter = "Text Files|*.txt";
+            sfd.ShowDialog();
+
+            StreamWriter w = new StreamWriter(sfd.FileName);
+            foreach (ListViewItem lvi in lvProxies.Items)
+            {
+                w.WriteLine(lvi.Text + ":" + lvi.SubItems[1].Text);
+            }
+            w.Close();
+        }
+
+        private void toolStripLabel2_Click(object sender, EventArgs e)
+        {
+            panelOptions.SendToBack();
+        }
+
+        private void checkedListBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             //
         }
