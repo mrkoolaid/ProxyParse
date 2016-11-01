@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("ProxyParse")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Parse proxies from online resources")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Hewlett-Packard")]
+[assembly: AssemblyCompany("kraft hackers")]
 [assembly: AssemblyProduct("ProxyParse")]
-[assembly: AssemblyCopyright("Copyright © Hewlett-Packard 2016")]
+[assembly: AssemblyCopyright("Copyright © kraft hackers 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
