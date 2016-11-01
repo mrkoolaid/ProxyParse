@@ -35,11 +35,6 @@ namespace ProxyParse
             Environment.Exit(0);
         }
 
-        private void aboutToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-            //show about box
-        }
-
         //private struct ProxyInfo
         //{
         //    public string address { get; set; }
@@ -55,12 +50,14 @@ namespace ProxyParse
             Regex regx;
             List<string> sites = new List<string>() { };
             sites.Add("https://incloak.com/proxy-list/");
+            sites.Add("http://www.sslproxies.org/");
 
             foreach (string url in sites)
             {
                 string[] split = url.Split('/');
                 foreach (string part in split)
                 {
+                    status.Text = "Looking for proxies..";
                     //.com, .net, .org, .co.uk, .jp
                     if (Regex.IsMatch(part, "(.co|.net|.org|.jp)"))
                     {
@@ -69,6 +66,7 @@ namespace ProxyParse
                             default: break;
 
                             case "incloak.com":
+                                status.Text = "Analyzing " + part;
                                 src = getSrc(url);
 
                                 //get addresses
@@ -90,6 +88,28 @@ namespace ProxyParse
 
                                     status.Text = "Loading proxies from " + part;
                                 }
+                                break;
+
+                            case "www.sslproxies.org":
+                                status.Text = "Analyzing " + part;
+                                src = getSrc(url);
+
+                                regx = new Regex(@"<td>(\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3})<\/td><td>(\d{1,5})<\/td>");
+                                MatchCollection sslProxies = regx.Matches(src);
+
+                                for (int i = 0; i < sslProxies.Count; i++)
+                                {
+                                    Match m = sslProxies[i];
+                                    ListViewItem lvi = new ListViewItem();
+                                    lvi.Text = m.Groups[1].Captures[0].Value;
+                                    lvi.SubItems.Add(m.Groups[2].Captures[0].Value);
+                                    lvi.SubItems.Add(DateTime.Now.ToLongTimeString());
+                                    lvi.SubItems.Add(part);
+                                    setProxyItem(lvi);
+
+                                    status.Text = "Loading proxies from " + part;
+                                }
+
                                 break;
                         }
                     }
@@ -126,20 +146,31 @@ namespace ProxyParse
         public string getSrc(string url)
         {
             string src = string.Empty;
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
-            req.UserAgent = "runscope/0.1";
-            req.Accept = "*/*";
-
-            WebResponse res = req.GetResponse();
-            StreamReader rdr = new StreamReader(res.GetResponseStream());
-
-            while (!rdr.EndOfStream)
+            try
             {
-                src += rdr.ReadLine();
-            }
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
+                req.UserAgent = "runscope/0.1";
+                req.Accept = "*/*";
 
-            rdr.Close();
-            res.Close();
+                WebResponse res = req.GetResponse();
+                StreamReader rdr = new StreamReader(res.GetResponseStream());
+
+                while (!rdr.EndOfStream)
+                {
+                    src += rdr.ReadLine();
+                }
+
+                rdr.Close();
+                res.Close();
+            }
+            catch (WebException wex)
+            {
+                status.Text = wex.Message;
+            }
+            catch (Exception ex)
+            {
+                status.Text = ex.Message;
+            }
 
             return src;
         }
