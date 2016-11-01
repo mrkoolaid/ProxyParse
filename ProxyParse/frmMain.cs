@@ -22,7 +22,6 @@ namespace ProxyParse
     {
         public Thread proxyThread;
         public delegate void SetProxyItem(ListViewItem l);
-        public bool aboutWinOpen = false;
 
         public frmMain()
         {
@@ -35,14 +34,9 @@ namespace ProxyParse
             Environment.Exit(0);
         }
 
-        //private struct ProxyInfo
-        //{
-        //    public string address { get; set; }
-        //    public string port { get; set; }
-        //    public string site { get; set; }
-        //    public string date { get; set; }
-        //}
-
+        /// <summary>
+        /// 
+        /// </summary>
         public void proxyWork()
         {
             //List<ProxyInfo> proxies = new List<ProxyInfo>() { };
@@ -208,6 +202,21 @@ namespace ProxyParse
         {
             frmAbout frm = new frmAbout();
             frm.Show();
+        }
+
+        private void toolStripLabel1_Click(object sender, EventArgs e)
+        {
+            panelOptions.SendToBack();
+        }
+
+        private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            panelOptions.BringToFront();
+        }
+
+        private void frmMain_Load(object sender, EventArgs e)
+        {
+            //
         }
     }
 }
