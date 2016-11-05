@@ -7,6 +7,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
+using Newtonsoft.Json.Linq;
 
 namespace ProxyParse
 {
@@ -37,9 +38,11 @@ namespace ProxyParse
             Regex regx;
             List<string> sites = new List<string>() { };
             sites.Add("https://incloak.com/proxy-list/");
-            sites.Add("http://www.sslproxies.org/");//sslproxies variants
-            sites.Add("http://us-proxy.org/");
-            sites.Add("http://socks-proxy.net/");
+            sites.Add("http://www.sslproxies.org/");//sslproxies variant
+            sites.Add("http://us-proxy.org/");//sslproxies variant
+            sites.Add("http://socks-proxy.net/");//sslproxies variant
+            sites.Add("http://free-proxy-list.net/uk-proxy.html");//sslproxies variant
+            sites.Add("https://hidester.com/proxydata/php/data.php?mykey=csv&country=&port=&type=undefined&anonymity=undefined&ping=undefined&gproxy=2");
 
             foreach (string url in sites)
             {
@@ -53,6 +56,59 @@ namespace ProxyParse
                         switch (part)
                         {
                             default: break;
+
+                            case "hidester.com":
+                                src = getSrc(url);
+                                regx = new Regex("[{](.+?)[}]");
+                                MatchCollection mc = regx.Matches(src);
+                                foreach (Match m in mc)
+                                {
+                                    string[] sa = m.Groups[0].Captures[0].Value.Split(',');
+                                    for (int j = 0; j < sa.Length; j++)
+                                    {
+                                        string[] sa2 = sa[j].Split(':');
+                                        if (sa2[1] != null)
+                                        {
+                                            for (int i = 0; i < sa2.Length; i++)
+                                            {
+                                                string curval = sa2[i].Trim('\"');
+
+                                                if (curval.Contains("{"))
+                                                {
+                                                    //get the next 11 after this one
+                                                    string[] proxy_block =
+                                                    {
+                                                        sa[j].Trim('\"'),
+                                                        sa[j+1].Trim('\"'),
+                                                        sa[j+2].Trim('\"'),
+                                                        sa[j+3].Trim('\"'),
+                                                        sa[j+4].Trim('\"'),
+                                                        sa[j+5].Trim('\"'),
+                                                        sa[j+6].Trim('\"'),
+                                                        sa[j+7].Trim('\"'),
+                                                        sa[j+8].Trim('\"'),
+                                                        sa[j+9].Trim('\"'),
+                                                        sa[j+10].Trim('\"'),
+                                                        sa[j+11].Trim('\"')
+                                                    };
+
+                                                    string[] pip = proxy_block[0].Split(':');
+                                                    string[] pport = proxy_block[1].Split(':');
+                                                    string[] ptype = proxy_block[10].Split(':');
+
+                                                    ListViewItem lvi = new ListViewItem();
+                                                    lvi.Text = pip[1].Trim('\"');
+                                                    lvi.SubItems.Add(pport[1].Trim('\"'));
+                                                    lvi.SubItems.Add(DateTime.Now.ToLongTimeString());
+                                                    lvi.SubItems.Add(part);
+                                                    lvi.SubItems.Add(ptype[1].Trim('\"'));
+                                                    setProxyItem(lvi);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
 
                             case "incloak.com":
                                 status.Text = "Analyzing " + part;
@@ -134,6 +190,28 @@ namespace ProxyParse
                                 for (int i = 0; i < snProxies.Count; i++)
                                 {
                                     Match m = snProxies[i];
+                                    ListViewItem lvi = new ListViewItem();
+                                    lvi.Text = m.Groups[1].Captures[0].Value;
+                                    lvi.SubItems.Add(m.Groups[2].Captures[0].Value);
+                                    lvi.SubItems.Add(DateTime.Now.ToLongTimeString());
+                                    lvi.SubItems.Add(part);
+                                    setProxyItem(lvi);
+
+                                    status.Text = "Loading proxies from " + part;
+                                }
+
+                                break;
+
+                            case "free-proxy-list.net":
+                                status.Text = "Analyzing " + part;
+                                src = getSrc(url);
+
+                                regx = new Regex(@"<td>(\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3})<\/td><td>(\d{1,5})<\/td>");
+                                MatchCollection fplProxies = regx.Matches(src);
+
+                                for (int i = 0; i < fplProxies.Count; i++)
+                                {
+                                    Match m = fplProxies[i];
                                     ListViewItem lvi = new ListViewItem();
                                     lvi.Text = m.Groups[1].Captures[0].Value;
                                     lvi.SubItems.Add(m.Groups[2].Captures[0].Value);
@@ -257,14 +335,6 @@ namespace ProxyParse
         private void frmMain_Load(object sender, EventArgs e)
         {
             //load options
-            addCbOption("incloak.com");
-            addCbOption("sslproxies.org");
-            addCbOption("us-proxy.org");
-        }
-
-        public void addCbOption(string text)
-        {
-            checkedListBox1.Items.Add(text, true);
         }
 
         private void textFileToolStripMenuItem_Click(object sender, EventArgs e)
